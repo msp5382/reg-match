@@ -1,82 +1,105 @@
-import Head from 'next/head'
+import axios from "axios";
+import Head from "next/head";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 
 export default function Home() {
+  const router = useRouter();
+  const { ids } = router.query;
+
+  const [friend, setFriend] = useState(["", ""]);
+  const [data, setData] = useState([]);
+  const [textShare, setTextShare] = useState("แชร์");
+  const findGroup = async (_friend) => {
+    const { data } = await axios.get("/api/match?ids=" + _friend.join(","));
+    console.log(data);
+    setData(data);
+  };
+  useEffect(() => {
+    if (ids != undefined) {
+      setFriend(ids.split(",").filter((a) => a != ""));
+      findGroup(ids.split(",").filter((a) => a != ""));
+    }
+  }, [ids]);
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <div className="w-screen h-screen bg-gray-100 pt-12 overflow-scroll">
+      <div className="max-w-lg mx-auto w-full pl-2 pr-2">
+        <div className="text-xl font-bold bg-white p-5 rounded-lg shadow-lg">
+          หาเพื่อนเซค !
+          {friend.map((x, i) => (
+            <input
+              type="text"
+              className="border w-full mt-2 p-1 rounded font-thin text-sm"
+              placeholder={"รหัสนิสิตคนที่ " + (i + 1)}
+              value={x}
+              onChange={(e) => {
+                setFriend(
+                  friend.map((y, _i) => {
+                    if (i == _i) {
+                      return e.target.value;
+                    } else {
+                      return y;
+                    }
+                  })
+                );
+              }}
+            />
+          ))}
+          <div className="font-thin text-xl flex  justify-end">
+            <div
+              onClick={() => findGroup(friend)}
+              className="cursor-pointer rounded bg-green-500 text-sm text-white p-1 mr-2 mt-2"
+            >
+              จัดกลุ่ม
+            </div>
+            <div
+              onClick={() => setFriend([...friend, ""])}
+              className="cursor-pointer rounded bg-green-500 text-sm text-white p-1 mt-2"
+            >
+              เพิ่มคน
+            </div>
+            <div
+              onClick={() => {
+                var text =
+                  "https://reg-matcher.vercel.app/?ids=" + friend.join(",");
+                navigator.clipboard.writeText(text).then(
+                  function () {
+                    setTextShare("คัดลอกลิ้งเรียบร้อย!");
+                  },
+                  function (err) {
+                    console.error("Async: Could not copy text: ", err);
+                  }
+                );
+              }}
+              className="cursor-pointer ml-2 rounded bg-yellow-500 text-sm text-white p-1 mr-2 mt-2"
+            >
+              {textShare}
+            </div>
+          </div>
+          <div className="overflow-scroll vh-50">
+            <div className="border border-gray-200 mt-5 mb-3"></div>
+            {data.map(({ code, name, section, participants }) => {
+              return (
+                <div className="mt-2 text-base">
+                  <div className="flex ">
+                    <div className="font-thin">วิชา {name}</div>
+                    <div className="flex flex-col ml-1 bg-yellow-500 text-white rounded pl-1 pr-1 justify-end">
+                      <div className="font-thin text-sm">Sec {section}</div>
+                    </div>
+                  </div>
 
-      <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
-        <h1 className="text-6xl font-bold">
-          Welcome to{' '}
-          <a className="text-blue-600" href="https://nextjs.org">
-            Next.js!
-          </a>
-        </h1>
-
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="p-3 font-mono text-lg bg-gray-100 rounded-md">
-            pages/index.js
-          </code>
-        </p>
-
-        <div className="flex flex-wrap items-center justify-around max-w-4xl mt-6 sm:w-full">
-          <a
-            href="https://nextjs.org/docs"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Documentation &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Find in-depth information about Next.js features and API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Learn &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Learn about Next.js in an interactive course with quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Examples &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Discover and deploy boilerplate example Next.js projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Deploy &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+                  <div className="font-thin text-sm">รหัสวิชา {code}</div>
+                  <div className="flex font-thin text-sm">
+                    <div className="bold">สมาชิก</div> :{" "}
+                    {participants.join(", ")}
+                  </div>
+                  <div className="border border-gray-200 mt-2 mb-3"></div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </main>
-
-      <footer className="flex items-center justify-center w-full h-24 border-t">
-        <a
-          className="flex items-center justify-center"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className="h-4 ml-2" />
-        </a>
-      </footer>
+      </div>
     </div>
-  )
+  );
 }
